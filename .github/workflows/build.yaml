@@ -8,27 +8,29 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: 1.16
 
-      - name: Setup Just
-        uses: extractions/setup-just@v3
-        with:
-          just-version: "1.40.0"
-
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Test
+        run: go test -covermode=count -coverprofile=coverage.out ./...
 
       - name: Build
-        run: just build test
+        run: go build -o makit ./cmd/main
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2
@@ -37,4 +39,5 @@ jobs:
           file: coverage.out
           format: golang
           fail-on-error: false
+        continue-on-error: true
         if: "matrix.os == 'ubuntu-latest'"
