@@ -1,5 +1,5 @@
 /*
-Copyright © 2025 Kairi Miyazaki
+Copyright © 2025 K140918
 */
 package main
 

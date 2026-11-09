@@ -75,7 +75,7 @@ Prebuilt binaries for Linux / macOS / Windows (amd64, arm64) are attached to eac
 
 ### Developer Name
 
-    Kairi Miyazaki
+    K140918
 
 ### License
 
