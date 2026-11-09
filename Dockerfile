@@ -1,23 +1,22 @@
 # ビルドステージ
 FROM golang:1-bullseye AS builder
 WORKDIR /work
-ARG CGO_ENABLED=0 [cite: 20]
+ARG CGO_ENABLED=0
+ENV CGO_ENABLED=${CGO_ENABLED}
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-RUN go build -o makit cmd/root.go
+RUN go build -o makit ./cmd/main
 
 # 配布用イメージステージ
 FROM scratch
-ARG VERSION=0.5.1
-LABEL org.opencontainers.image.source=https://github.com/kai20020918/makit \
+ARG VERSION=0.1.3
+LABEL org.opencontainers.image.source=https://github.com/k140918/makit \
       org.opencontainers.image.version=${VERSION} \
       org.opencontainers.image.title=makit \
-      org.opencontainers.image.description="Another implementation of Word Count (wc), again."
+      org.opencontainers.image.description="A CLI tool to create files and directories with a single command."
 
-# RUN adduser -disabled-password --disabled-login --home /workdir nonroot \
-#     && mkdir -p /workdir  # nonrootユーザーを追加
-COPY --from=builder /work/makit /opt/wildcherry/makit
-COPY --from=golang:1.12 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /work/makit /opt/makit/makit
 
 WORKDIR /workdir
-# USER nonroot [cite: 20] # ユーザーをnonrootに変更
-ENTRYPOINT [ "/opt/wildcherry/makit" ]
+ENTRYPOINT [ "/opt/makit/makit" ]

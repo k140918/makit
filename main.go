@@ -1,9 +1,9 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 Kairi Miyazaki
 */
 package main
 
-import "github.com/kai20020918/makit/cmd"
+import "github.com/k140918/makit/cmd"
 
 func main() {
 	cmd.Execute()

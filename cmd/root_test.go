@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -19,7 +19,7 @@ var MockExitCalledWith int
 // 各テストで新しいコマンドインスタンスを返します。
 func setupTestEnv(t *testing.T) (cleanup func(), cmdInstance *cobra.Command) {
 	// テスト用の作業ディレクトリを作成
-	testDir, err := ioutil.TempDir("", "makit-test-")
+	testDir, err := os.MkdirTemp("", "makit-test-")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
@@ -43,8 +43,8 @@ func setupTestEnv(t *testing.T) (cleanup func(), cmdInstance *cobra.Command) {
 
 	// クリーンアップ関数を返す
 	cleanupFunc := func() {
-		os.Chdir(originalDir) // 元のディレクトリに戻る
-		os.RemoveAll(testDir) // テストディレクトリを削除
+		os.Chdir(originalDir)   // 元のディレクトリに戻る
+		os.RemoveAll(testDir)   // テストディレクトリを削除
 		exitFunc = originalExit // テスト終了後に元の os.Exit に戻す
 	}
 
@@ -79,8 +79,8 @@ func executeAndCaptureOutput(t *testing.T, cmd *cobra.Command, args []string) (o
 		wErr.Close()
 		os.Stdout = oldStdout
 		os.Stderr = oldStderr
-		outBytes, _ := ioutil.ReadAll(rOut)
-		errBytes, _ := ioutil.ReadAll(rErr)
+		outBytes, _ := io.ReadAll(rOut)
+		errBytes, _ := io.ReadAll(rErr)
 		rOut.Close()
 		rErr.Close()
 		output = string(outBytes) + string(errBytes)
@@ -171,14 +171,13 @@ func TestExecuteCreateFileInNewDirectory(t *testing.T) {
 	}
 }
 
-
 // TestExecuteNoCreateExistingFile は -c オプションと既存ファイルをテストします。
 func TestExecuteNoCreateExistingFile(t *testing.T) {
 	cleanup, cmd := setupTestEnv(t)
 	defer cleanup()
 
 	testFileName := "existing.txt"
-	err := ioutil.WriteFile(testFileName, []byte("hello"), 0644)
+	err := os.WriteFile(testFileName, []byte("hello"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create pre-existing file: %v", err)
 	}
@@ -194,7 +193,7 @@ func TestExecuteNoCreateExistingFile(t *testing.T) {
 	}
 
 	// ファイルの内容が変更されていないことを確認 (内容変更機能はないので)
-	content, _ := ioutil.ReadFile(testFileName)
+	content, _ := os.ReadFile(testFileName)
 	if string(content) != "hello" {
 		t.Errorf("File content was unexpectedly modified")
 	}
@@ -226,10 +225,10 @@ func TestExecuteInvalidMode(t *testing.T) {
 	defer cleanup()
 
 	output, err := executeAndCaptureOutput(t, cmd, []string{"-m", "invalid_mode", "dummy.txt"})
-	
+
 	if err == nil {
-        // Execute() がエラーを返した場合、ここでエラーメッセージをチェック
-    } else if MockExitCalledWith != 1 {
+		// Execute() がエラーを返した場合、ここでエラーメッセージをチェック
+	} else if MockExitCalledWith != 1 {
 		t.Errorf("Expected an error or os.Exit(1), but got none. MockExitCalledWith: %d", MockExitCalledWith)
 	}
 
@@ -241,35 +240,36 @@ func TestExecuteInvalidMode(t *testing.T) {
 
 // TestExecuteValidMode は有効なモード指定をテストします。
 func TestExecuteValidMode(t *testing.T) {
-    cleanup, cmd := setupTestEnv(t)
-    defer cleanup()
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
 
-    testFileName := "mode_test.txt"
-    modeStr := "755" // makit コマンドに渡す文字列
+	testFileName := "mode_test.txt"
+	modeStr := "755" // makit コマンドに渡す文字列
 
-    // 期待するパーミッションをOSによって変更
-    expectedPerm := os.FileMode(0755)
-    if runtime.GOOS == "windows" { // ★ここから追加
-        // Windowsではファイルの実行権限は通常設定されない
-        // OpenFile/Chmod で 0755 を指定しても 0666 や 0644 になることが多い
-        // テストでは 0666 を期待するようにする
-        expectedPerm = os.FileMode(0666) // または 0644、環境に依存する可能性あり
-    } // ★ここまで追加
+	// 期待するパーミッションをOSによって変更
+	expectedPerm := os.FileMode(0755)
+	if runtime.GOOS == "windows" { // ★ここから追加
+		// Windowsではファイルの実行権限は通常設定されない
+		// OpenFile/Chmod で 0755 を指定しても 0666 や 0644 になることが多い
+		// テストでは 0666 を期待するようにする
+		expectedPerm = os.FileMode(0666) // または 0644、環境に依存する可能性あり
+	} // ★ここまで追加
 
-    _, err := executeAndCaptureOutput(t, cmd, []string{"-m", modeStr, testFileName})
-    if err != nil {
-        t.Fatalf("Execute() failed: %v", err)
-    }
+	_, err := executeAndCaptureOutput(t, cmd, []string{"-m", modeStr, testFileName})
+	if err != nil {
+		t.Fatalf("Execute() failed: %v", err)
+	}
 
-    info, err := os.Stat(testFileName)
-    if err != nil {
-        t.Fatalf("Failed to stat file %s: %v", testFileName, err)
-    }
-    actualPerm := info.Mode() & os.ModePerm
-    if actualPerm != expectedPerm {
-        t.Errorf("Expected permission %o, got %o", expectedPerm, actualPerm)
-    }
+	info, err := os.Stat(testFileName)
+	if err != nil {
+		t.Fatalf("Failed to stat file %s: %v", testFileName, err)
+	}
+	actualPerm := info.Mode() & os.ModePerm
+	if actualPerm != expectedPerm {
+		t.Errorf("Expected permission %o, got %o", expectedPerm, actualPerm)
+	}
 }
+
 // TestExecuteInvalidTimestamp は無効なタイムスタンプ指定をテストします。
 func TestExecuteInvalidTimestamp(t *testing.T) {
 	cleanup, cmd := setupTestEnv(t)
@@ -278,8 +278,8 @@ func TestExecuteInvalidTimestamp(t *testing.T) {
 	output, err := executeAndCaptureOutput(t, cmd, []string{"-d", "invalid_timestamp", "dummy.txt"})
 
 	if err == nil {
-        // Execute() がエラーを返した場合、ここでエラーメッセージをチェック
-    } else if MockExitCalledWith != 1 {
+		// Execute() がエラーを返した場合、ここでエラーメッセージをチェック
+	} else if MockExitCalledWith != 1 {
 		t.Errorf("Expected an error or os.Exit(1), but got none. MockExitCalledWith: %d", MockExitCalledWith)
 	}
 
@@ -298,7 +298,6 @@ func TestExecuteValidTimestamp(t *testing.T) {
 	timestampStr := "202401011030"
 	loc, _ := time.LoadLocation("UTC") // タイムゾーンを明示的にUTCに設定
 	expectedTime, _ := time.ParseInLocation("200601021504", timestampStr, loc)
-
 
 	_, err := executeAndCaptureOutput(t, cmd, []string{"-d", timestampStr, testFileName})
 	if err != nil {
@@ -371,16 +370,101 @@ func TestExecuteEmptyArgs(t *testing.T) {
 
 	// 空の引数リストを渡してコマンドを実行
 	output, err := executeAndCaptureOutput(t, cmd, []string{})
-	
+
 	// エラーが発生したことを確認する
 	// Execute() がエラーを返すか、または MockExitCalledWith が設定されているかを確認
 	if err == nil && MockExitCalledWith != 1 {
 		t.Errorf("Expected an error or os.Exit(1) for empty args, but got none. MockExitCalledWith: %d", MockExitCalledWith)
 	}
-	
+
 	// SilenceUsage = true のため、エラーメッセージは標準出力には出力されない。
 	// そのため、出力は空であることを期待する。
 	if output != "" {
 		t.Errorf("Expected empty output for usage error due to SilenceUsage, got %q", output)
+	}
+}
+
+// TestExecuteDefaultFilePermission はファイルのデフォルトパーミッションが 0644 であることをテストします。
+func TestExecuteDefaultFilePermission(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission bits are not meaningful on Windows")
+	}
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
+
+	testFileName := "default_perm.txt"
+	if _, err := executeAndCaptureOutput(t, cmd, []string{testFileName}); err != nil {
+		t.Fatalf("Execute() failed: %v", err)
+	}
+	info, err := os.Stat(testFileName)
+	if err != nil {
+		t.Fatalf("Failed to stat file %s: %v", testFileName, err)
+	}
+	// umask により権限が減る可能性があるため、実行ビットが立っていないことだけを確認する
+	if info.Mode()&0111 != 0 {
+		t.Errorf("Expected file without execute bits, got %o", info.Mode()&os.ModePerm)
+	}
+}
+
+// TestExecuteNoParents は --parents=false で親ディレクトリが作成されないことをテストします。
+func TestExecuteNoParents(t *testing.T) {
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
+
+	testPath := "missing_parent/file.txt"
+	output, _ := executeAndCaptureOutput(t, cmd, []string{"--parents=false", testPath})
+
+	if MockExitCalledWith != 1 {
+		t.Errorf("Expected os.Exit(1), got %d", MockExitCalledWith)
+	}
+	if _, err := os.Stat("missing_parent"); !os.IsNotExist(err) {
+		t.Errorf("Parent directory was unexpectedly created")
+	}
+	if !strings.Contains(output, "Error creating file") {
+		t.Errorf("Expected error message not found in %q", output)
+	}
+}
+
+// TestExecuteParentsFlag は -p を明示指定しても動作することをテストします。
+func TestExecuteParentsFlag(t *testing.T) {
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
+
+	testPath := "a/b/c.txt"
+	if _, err := executeAndCaptureOutput(t, cmd, []string{"-p", testPath}); err != nil {
+		t.Fatalf("Execute() failed: %v", err)
+	}
+	if _, err := os.Stat(testPath); err != nil {
+		t.Errorf("File %s was not created: %v", testPath, err)
+	}
+}
+
+// TestExecuteModeOutOfRange は範囲外のモード指定をテストします。
+func TestExecuteModeOutOfRange(t *testing.T) {
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
+
+	output, _ := executeAndCaptureOutput(t, cmd, []string{"-m", "7777", "dummy.txt"})
+	if MockExitCalledWith != 1 {
+		t.Errorf("Expected os.Exit(1), got %d", MockExitCalledWith)
+	}
+	if !strings.Contains(output, "invalid mode") {
+		t.Errorf("Expected error message not found in %q", output)
+	}
+}
+
+// TestExecuteVersion は --version フラグをテストします。
+func TestExecuteVersion(t *testing.T) {
+	Version = "9.9.9"
+	defer func() { Version = "dev" }()
+	cleanup, cmd := setupTestEnv(t)
+	defer cleanup()
+
+	output, err := executeAndCaptureOutput(t, cmd, []string{"--version"})
+	if err != nil {
+		t.Fatalf("Execute() failed: %v", err)
+	}
+	if !strings.Contains(output, "9.9.9") {
+		t.Errorf("Expected version in output, got %q", output)
 	}
 }
