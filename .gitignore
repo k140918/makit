@@ -1,0 +1,22 @@
+# Build outputs
+/makit
+/makit.exe
+/dist/
+*.test
+*.exe
+
+# Test / coverage
+coverage.out
+coverage.lcov
+
+# Hugo
+.hugo_build.lock
+/public/
+/docs/public/
+/docs/resources/_gen/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

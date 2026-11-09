@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/kai20020918/makit/cmd" // Importing the cmd package from makit
+	"github.com/k140918/makit/cmd"
 )
 
 func main() {
+	cmd.Version = VERSION
 	cmd.Execute()
 }

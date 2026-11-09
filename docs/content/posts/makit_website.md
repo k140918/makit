@@ -8,8 +8,8 @@ title = 'makit CLI Tool Documentation'
 
 A CLI tool that allows you to create files and directories with a single command  
 ![MIT License](https://img.shields.io/badge/license-MIT-blue "MIT License")
-[![Go Report Card](https://goreportcard.com/badge/github.com/kai20020918/makit)](https://goreportcard.com/report/github.com/kai20020918/makit)
-[![Coverage Status](https://coveralls.io/repos/github/kai20020918/makit/badge.svg?branch=main)](https://coveralls.io/github/kai20020918/makit?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/github.com/k140918/makit)](https://goreportcard.com/report/github.com/k140918/makit)
+[![Coverage Status](https://coveralls.io/repos/github/k140918/makit/badge.svg?branch=main)](https://coveralls.io/github/k140918/makit?branch=main)
 
 ## 👀 Overview
 
@@ -96,7 +96,7 @@ To use `makit` from any directory in your terminal, you need to place the `makit
     Navigate to the root directory of your `makit` project (where `go.mod` is located) and build the application:
 
     ```bash
-    go build -o makit cmd/main/makit.go
+    go build -o makit ./cmd/main
     ```
 
     This will create an executable file named `makit` in your current directory.
