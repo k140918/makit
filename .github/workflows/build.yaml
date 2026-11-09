@@ -30,17 +30,11 @@ jobs:
       - name: Build
         run: just build test
 
-      - name: Convert Coverage Format to LCOV
-        uses: jandelgado/gcov2lcov-action@v1.0.0
-        with:
-          infile: coverage.out
-          outfile: coverage.lcov
-        if: "matrix.os == 'ubuntu-latest'"
-
       - name: Coveralls
-        uses: coverallsapp/github-action@v2.3.0
+        uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.github_token }}
           file: coverage.out
           format: golang
+          fail-on-error: false
         if: "matrix.os == 'ubuntu-latest'"

@@ -119,7 +119,7 @@ To use `makit` from any directory in your terminal, you need to place the `makit
 
 ### Developer Name
 
-    Kairi Miyazaki
+    K140918
 
 ### Origin of Name
 
